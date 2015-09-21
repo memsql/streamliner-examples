@@ -3,6 +3,7 @@ SHELL := /bin/bash
 VERSION := $(shell sbt 'export version' | tail -n 1)
 export VERSION
 
+.PHONY: default
 default: build
 
 .PHONY: version
