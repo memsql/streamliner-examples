@@ -31,9 +31,9 @@ class EvenNumbersOnlyTransformer extends SimpleByteArrayTransformer {
 // A Transformer can also be configured with the config blob that is provided in MemSQL Ops.
 class ConfigurableNumberParityTransformer extends SimpleByteArrayTransformer {
   override def transform(sqlContext: SQLContext, rdd: RDD[Array[Byte]], config: UserTransformConfig, logger: PhaseLogger): DataFrame = {
-    var keepEvenNumbers = config.getConfigBoolean("filter", "even").getOrElse(true)
-    var keepOddNumbers = config.getConfigBoolean("filter", "odd").getOrElse(true)
-    var columnName = config.getConfigString("table", "column_name").getOrElse("number")
+    val keepEvenNumbers = config.getConfigBoolean("filter", "even").getOrElse(true)
+    val keepOddNumbers = config.getConfigBoolean("filter", "odd").getOrElse(true)
+    val columnName = config.getConfigString("table", "column_name").getOrElse("number")
 
     logger.info("transforming the RDD")
 

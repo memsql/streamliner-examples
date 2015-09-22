@@ -28,10 +28,13 @@ lazy val root = (project in file(".")).
   settings(commonSettings: _*).
   settings(
     name := "memsql-spark-streamliner-examples",
+    parallelExecution in Test := false,
+    test in assembly := {},
     libraryDependencies  ++= Seq(
         "org.apache.spark" %% "spark-core" % "1.4.1" % "provided",
         "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
         "org.apache.spark" %% "spark-streaming" % "1.4.1" % "provided",
+        "org.scalatest" %% "scalatest" % "2.2.5" % "test",
         "com.memsql" %% "memsqletl" % "0.2.1"
     )
 )
