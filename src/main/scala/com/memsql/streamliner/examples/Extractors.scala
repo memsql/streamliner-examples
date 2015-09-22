@@ -30,7 +30,7 @@ class ConfigurableConstantExtractor extends SimpleByteArrayExtractor {
 
     val start = config.getConfigInt("start").getOrElse(1)
     val end = config.getConfigInt("end").getOrElse(5)
-    Some(sparkContext.parallelize(List.range(start, end).map(byteUtils.intToBytes)))
+    Some(sparkContext.parallelize(List.range(start, end + 1).map(byteUtils.intToBytes)))
   }
 }
 
