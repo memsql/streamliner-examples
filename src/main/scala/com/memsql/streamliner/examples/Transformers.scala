@@ -8,6 +8,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 import com.memsql.spark.context._
 import com.memsql.spark.connector._
+import com.memsql.spark.connector.dataframe.{JsonType, JsonValue}
 import com.memsql.spark.etl.api._
 import com.memsql.spark.etl.utils.PhaseLogger
 
@@ -44,6 +45,22 @@ class ConfigurableNumberParityTransformer extends SimpleByteArrayTransformer {
 
     // create a schema with a single non-nullable integer column using the configured column name
     val schema = StructType(Array(StructField(columnName, IntegerType, true)))
+
+    sqlContext.createDataFrame(transformedRDD, schema)
+  }
+}
+
+class JSONCheckIdTransformer extends SimpleByteArrayTransformer {
+  override def transform(sqlContext: SQLContext, rdd: RDD[Array[Byte]], config: UserTransformConfig, logger: PhaseLogger): DataFrame = {
+    var columnName = config.getConfigString("table", "column_name").getOrElse("data")
+
+    // transform the RDD into RDD[Row], filtering only objects that contain an "id" field
+    val jsonRDD = rdd.map(r => new JsonValue(byteUtils.bytesToUTF8String(r)))
+    val filteredRDD = jsonRDD.filter(x => JSON.parseFull(x.value).get.asInstanceOf[Map[String, Any]].contains("id"))
+    val transformedRDD = filteredRDD.map(x => Row(x))
+
+    // create a schema with a single non-nullable JSON column using the configured column name
+    val schema = StructType(Array(StructField(columnName, JsonType, true)))
 
     sqlContext.createDataFrame(transformedRDD, schema)
   }
