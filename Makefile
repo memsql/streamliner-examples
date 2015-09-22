@@ -29,6 +29,10 @@ build-thrift: clean
 ##############################
 # PROJECT TEST RULES
 #
+.PHONY: test
+test:
+	sbt test
+
 .PHONY: thrift-test-deps-compile
 thrift-test-deps-compile:
 	mkdir -p thrift/src/test/java
