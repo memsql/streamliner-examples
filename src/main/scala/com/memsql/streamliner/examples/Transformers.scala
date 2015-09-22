@@ -77,14 +77,14 @@ class JSONCheckIdTransformer extends SimpleByteArrayTransformer {
 
     // transform the RDD into RDD[Row], filtering only objects that contain an "id" field
     val jsonRDD = rdd.map(r => new JsonValue(byteUtils.bytesToUTF8String(r)))
-    val filteredRDD = jsonRDD.mapPartitions(r => r.filter(x => {
+    val filteredRDD = jsonRDD.mapPartitions(r => {
         // register jackson mapper (this needs to be executed on each partition)
         val mapper = new ObjectMapper()
         mapper.registerModule(DefaultScalaModule)
 
-        // parse the object and check if it contains the "id" field
-        mapper.readValue(x.value, classOf[Map[String,Any]]).contains("id")
-    }))
+        // filter the partition for only the objects that contain an "id" field
+        r.filter(x => mapper.readValue(x.value, classOf[Map[String,Any]]).contains("id"))
+    })
     val transformedRDD = filteredRDD.map(x => Row(x))
 
     // create a schema with a single non-nullable JSON column using the configured column name
