@@ -73,7 +73,7 @@ class JSONMultiColsTransformer extends SimpleByteArrayTransformer {
 // This saves into MemSQL a single column of type JSON
 class JSONCheckIdTransformer extends SimpleByteArrayTransformer {
   override def transform(sqlContext: SQLContext, rdd: RDD[Array[Byte]], config: UserTransformConfig, logger: PhaseLogger): DataFrame = {
-    var columnName = config.getConfigString("table", "column_name").getOrElse("data")
+    var columnName = config.getConfigString("column_name").getOrElse("data")
 
     // transform the RDD into RDD[Row], filtering only objects that contain an "id" field
     val jsonRDD = rdd.map(r => new JsonValue(byteUtils.bytesToUTF8String(r)))

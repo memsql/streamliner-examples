@@ -122,8 +122,8 @@ class TransformersSpec extends UnitSpec with LocalSparkContext {
 
     var tableName = "test"
     val config = UserTransformConfig(
-      class_name="test",
-      value=JsObject("table" -> JsObject("column_name" -> JsString(tableName)))
+      class_name = "test",
+      value = JsObject("column_name" -> JsString(tableName))
     )
 
     val df = transform.transform(sqlContext, rdd, config, logger)
