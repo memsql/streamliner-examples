@@ -40,7 +40,7 @@ Clone the repository, then run:
 make build
 ```
 
-The JAR will be localed within `target/scala-<version>/`. You can upload the JAR into MemSQL Ops and build your custom pipeline.
+The JAR will be placed in `target/scala-<version>/`. You can upload the JAR to MemSQL Ops and create a pipeline using this or your custom code.
 
 
 Run Tests
