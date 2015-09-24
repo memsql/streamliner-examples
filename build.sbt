@@ -19,7 +19,7 @@ lazy val thrift = (project in file("thrift")).
         "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
         "org.apache.thrift" % "libthrift" % "0.9.2",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-        "com.memsql" %% "memsqletl" % "0.2.3"
+        "com.memsql" %% "memsqletl" % "1.0.0"
       )
     }
   )
@@ -35,6 +35,6 @@ lazy val root = (project in file(".")).
         "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
         "org.apache.spark" %% "spark-streaming" % "1.4.1" % "provided",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-        "com.memsql" %% "memsqletl" % "0.2.3"
+        "com.memsql" %% "memsqletl" % "1.0.0"
     )
 )
