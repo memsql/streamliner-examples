@@ -8,9 +8,9 @@ import org.apache.thrift.{TBase, TDeserializer, TFieldIdEnum}
 
 class ThriftTransformer extends SimpleByteArrayTransformer {
   def thriftRDDToDataFrame(sqlContext: SQLContext, rdd: RDD[Array[Byte]], c: Class[_]): DataFrame = {
-    val thriftToRow = new ThriftToRow(c)
-    val deserializer = new TDeserializer()
     val rowRDD: RDD[Row] = rdd.map({ record =>
+      val thriftToRow = new ThriftToRow(c)
+      val deserializer = new TDeserializer()
       val i = c.newInstance().asInstanceOf[TBase[_ <: TBase[_, _], _ <: TFieldIdEnum]]
       deserializer.deserialize(i, record)
       thriftToRow.getRow(i)
