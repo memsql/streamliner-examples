@@ -1,3 +1,4 @@
 target/
 .idea/
 thrift/src/test/java/*
+avro/src/test/java/*
