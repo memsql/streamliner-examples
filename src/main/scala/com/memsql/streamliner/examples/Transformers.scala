@@ -1,13 +1,8 @@
 package com.memsql.streamliner.examples
 
-import org.apache.spark._
 import org.apache.spark.rdd._
-import org.apache.spark.streaming._
-import org.apache.spark.streaming.dstream._
 import org.apache.spark.sql._
 import org.apache.spark.sql.types._
-import com.memsql.spark.context._
-import com.memsql.spark.connector._
 import com.memsql.spark.connector.dataframe.{JsonType, JsonValue}
 import com.memsql.spark.etl.api._
 import com.memsql.spark.etl.utils.PhaseLogger
@@ -15,6 +10,8 @@ import com.memsql.spark.etl.utils.{JSONPath, JSONUtils}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+
+import scala.collection.JavaConversions._
 
 // A Transformer implements the transform method which turns an RDD into a DataFrame.
 class EvenNumbersOnlyTransformer extends SimpleByteArrayTransformer {
@@ -91,5 +88,37 @@ class JSONCheckIdTransformer extends SimpleByteArrayTransformer {
     val schema = StructType(Array(StructField(columnName, JsonType, true)))
 
     sqlContext.createDataFrame(transformedRDD, schema)
+  }
+}
+
+class TwitterHashtagTransformer extends SimpleByteArrayTransformer {
+  override def transform(sqlContext: SQLContext, rdd: RDD[Array[Byte]], config: UserTransformConfig, logger: PhaseLogger): DataFrame = {
+    val columnName = config.getConfigString("column_name").getOrElse("hashtags")
+
+    // convert each input element to a JsonValue
+    val jsonRDD = rdd.map(r => byteUtils.bytesToUTF8String(r))
+
+    val hashtagsRDD: RDD[String] = jsonRDD.mapPartitions(r => {
+      // register jackson mapper (this needs to be instantiated per partition
+      // since it is not serializable)
+      val mapper = new ObjectMapper()
+      mapper.registerModule(DefaultScalaModule)
+
+      r.flatMap(tweet => {
+        val rootNode = mapper.readTree(tweet)
+        val hashtags = rootNode.path("entities").path("hashtags")
+        if (!hashtags.isMissingNode) {
+          hashtags.elements
+            .filter(n => n.has("text"))
+            .map(n => n.get("text").asText)
+        } else {
+          Nil
+        }
+      })
+    })
+
+    val rowRDD: RDD[Row] = hashtagsRDD.map(x => Row(x))
+    val schema = StructType(Array(StructField(columnName, StringType, true)))
+    sqlContext.createDataFrame(rowRDD, schema)
   }
 }

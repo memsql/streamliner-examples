@@ -1,12 +1,14 @@
 package test
 
+import java.io.{BufferedReader, InputStreamReader}
+
 import com.memsql.spark.etl.api.UserTransformConfig
 import com.memsql.spark.etl.utils.ByteUtils
 import com.memsql.streamliner.examples._
 import com.memsql.spark.connector.dataframe.JsonType
 import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.sql.types.{StructField, IntegerType, StringType, StructType}
-import spray.json.{JsBoolean, JsObject, JsString}
+import spray.json.{JsNull, JsBoolean, JsObject, JsString}
 import test.util.{UnitSpec, TestLogger, LocalSparkContext}
 
 class TransformersSpec extends UnitSpec with LocalSparkContext {
@@ -120,14 +122,14 @@ class TransformersSpec extends UnitSpec with LocalSparkContext {
       """{"id": "a001", "txt": "hello"}"""
     ).map(ByteUtils.utf8StringToBytes))
 
-    var tableName = "test"
+    val columnName = "test"
     val config = UserTransformConfig(
       class_name = "test",
-      value = JsObject("column_name" -> JsString(tableName))
+      value = JsObject("column_name" -> JsString(columnName))
     )
 
     val df = transform.transform(sqlContext, rdd, config, logger)
-    assert(df.schema == StructType(Array(StructField(tableName, JsonType, true))))
+    assert(df.schema == StructType(Array(StructField(columnName, JsonType, true))))
     assert(df.count == 1)
     assert(df.first.toString == """[{"id": "a001", "txt": "hello"}]""")
   }
@@ -143,5 +145,25 @@ class TransformersSpec extends UnitSpec with LocalSparkContext {
     val df = transform.transform(sqlContext, rdd, emptyConfig, logger)
     assert(df.schema == StructType(Array(StructField("data", JsonType, true))))
     assert(df.count == 2)
+  }
+
+  "TwitterHashtagTransformer" should "should extract all the hashtags from the tweets resource" in {
+    val transform = new TwitterHashtagTransformer
+    val tweetsURI = getClass.getResource("/tweets").toURI
+    val rdd = sc.textFile(tweetsURI.toURL.toString).map(ByteUtils.utf8StringToBytes)
+
+    val columnName = "test"
+    val config = UserTransformConfig(
+      class_name = "TwitterHashtagTransformer",
+      value = JsObject("column_name" -> JsString(columnName))
+    )
+
+    val df = transform.transform(sqlContext, rdd, config, logger)
+
+    assert(df.schema == StructType(Array(StructField(columnName, StringType, true))))
+    // looked in the tweets file (see resources/tweets) and found the
+    // first hashtag in the first tweet
+    assert(df.first == Row("MTVFANWARSArianators"))
+    assert(df.count == 141)
   }
 }
