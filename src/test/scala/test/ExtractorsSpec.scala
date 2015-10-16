@@ -3,6 +3,7 @@ package test
 import com.memsql.spark.etl.api.UserExtractConfig
 import com.memsql.spark.etl.utils.ByteUtils
 import com.memsql.streamliner.examples._
+import org.apache.spark.streaming.{Time, Duration, StreamingContext}
 import spray.json._
 import test.util.{UnitSpec, TestLogger, LocalSparkContext}
 
@@ -60,6 +61,21 @@ class ExtractorsSpec extends UnitSpec with LocalSparkContext {
       val rdd = maybeRDD.get.map(ByteUtils.bytesToInt)
       assert(rdd.count == 1)
       assert(rdd.first == i)
+    }
+  }
+
+  "DStreamExtractor" should "produce RDDs from the InputDStream" in {
+    val ssc = new StreamingContext(sc, new Duration(500))
+    val extract = new DStreamExtractor
+    val dStream = extract.extract(ssc, emptyConfig, 1, logger)
+
+    val computedResult = dStream.compute(new Time(System.currentTimeMillis))
+    computedResult match {
+      case None => fail("Empty return RDD")
+      case Some(result) => {
+        val total = result.map(ByteUtils.bytesToInt).sum()
+        assert(total == 0)
+      }
     }
   }
 }

@@ -1,14 +1,12 @@
 package test
 
-import java.io.{BufferedReader, InputStreamReader}
-
 import com.memsql.spark.etl.api.UserTransformConfig
 import com.memsql.spark.etl.utils.ByteUtils
 import com.memsql.streamliner.examples._
 import com.memsql.spark.connector.dataframe.JsonType
 import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.sql.types.{StructField, IntegerType, StringType, StructType}
-import spray.json.{JsNull, JsBoolean, JsObject, JsString}
+import spray.json.{JsBoolean, JsObject, JsString}
 import test.util.{UnitSpec, TestLogger, LocalSparkContext}
 
 class TransformersSpec extends UnitSpec with LocalSparkContext {
@@ -165,5 +163,25 @@ class TransformersSpec extends UnitSpec with LocalSparkContext {
     // first hashtag in the first tweet
     assert(df.first == Row("MTVFANWARSArianators"))
     assert(df.count == 141)
+  }
+
+  "S3AccessLogsTransformer" should "correctly parse S3 logs" in {
+    // example from AWS website
+    val logOutput =
+      """79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be mybucket [06/Feb/2014:00:00:38 +0000] 192.0.2.3
+        | 79a59df900b949e55d96a1e698fbacedfd6e09d98eacf8f8d5218e7cd47ef2be 3E57427F3EXAMPLE REST.GET.VERSIONING - "GET/mybucket?versioning HTTP/1.1" 200
+        | - 113 - 7 - "-" "S3Console/0.4" -""".stripMargin.replaceAll("\n", "")
+
+    val transformer = new S3AccessLogsTransformer
+    val rdd = sc.parallelize(List(logOutput).map(ByteUtils.utf8StringToBytes))
+    val df = transformer.transform(sqlContext, rdd, emptyConfig, logger)
+    assert(df.count == 1)
+
+    val first = df.first
+
+    assert(first.getAs[String]("bucket") == "mybucket")
+    assert(first.getAs[String]("ip") == "192.0.2.3")
+    assert(first.getAs[String]("user_agent") == "S3Console/0.4")
+    assert(first.getAs[String]("version_id") == "-")
   }
 }
