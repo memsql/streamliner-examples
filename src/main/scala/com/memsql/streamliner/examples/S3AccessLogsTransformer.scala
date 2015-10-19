@@ -8,7 +8,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 
 class S3AccessLogsTransformer extends SimpleByteArrayTransformer {
-  val S3_LINE_LOGPATS = """(\S+) (\S+) \[(.*?)\] (\S+) (\S+) (\S+) (\S+) (\S+) (?:"([^"]+)"|-) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (?:"([^"]+)"|-) (?:"([^"]+)"|-)\s*""".r
+  val S3_LINE_LOGPATS = """(\S+) (\S+) \[(.*?)\] (\S+) (\S+) (\S+) (\S+) (\S+) (?:"([^"]+)"|-) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (?:"([^"]+)"|-) (?:"([^"]+)"|-) (\S+)\s*""".r
 
   val SCHEMA = StructType(Array(
     StructField("bucket_owner", StringType, true),
@@ -27,7 +27,8 @@ class S3AccessLogsTransformer extends SimpleByteArrayTransformer {
     StructField("total_time", IntegerType, true),
     StructField("turn_around_time", IntegerType, true),
     StructField("referer", StringType, true),
-    StructField("user_agent", StringType, true)
+    StructField("user_agent", StringType, true),
+    StructField("version_id", StringType, true)
   ))
 
   val PARSER = new java.text.SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss +SSSS")
