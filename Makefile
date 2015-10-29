@@ -13,7 +13,8 @@ version:
 .PHONY: clean
 clean:
 	sbt clean \
-		"project thrift" clean
+		"project thrift" clean \
+		"project avro" clean
 
 ##############################
 # PROJECT BUILD RULES
@@ -25,6 +26,10 @@ build: clean
 .PHONY: build-thrift
 build-thrift: clean
 	sbt "project thrift" assembly
+
+.PHONY: build-avro
+build-avro: clean
+	sbt "project avro" assembly
 
 ##############################
 # PROJECT TEST RULES
@@ -41,3 +46,7 @@ thrift-test-deps-compile:
 .PHONY: test-thrift
 test-thrift: thrift-test-deps-compile
 	sbt "project thrift" test
+
+.PHONY: test-avro
+test-avro:
+	sbt "project avro" test

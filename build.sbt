@@ -6,6 +6,24 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.10.5"
 )
 
+lazy val avro = (project in file("avro")).
+  settings(commonSettings: _*).
+  settings(
+    name := "memsql-spark-streamliner-avro-examples",
+    parallelExecution in Test := false,
+    test in assembly := {},
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.spark" %% "spark-core" % "1.4.1" % "provided",
+        "org.apache.spark" %% "spark-streaming" % "1.4.1" % "provided",
+        "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
+        "org.apache.avro" % "avro" % "1.7.7",
+        "org.scalatest" %% "scalatest" % "2.2.5" % "test",
+        "com.memsql" %% "memsqletl" % "1.0.0"
+      )
+    }
+  )
+
 lazy val thrift = (project in file("thrift")).
   settings(commonSettings: _*).
   settings(
