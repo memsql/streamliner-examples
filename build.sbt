@@ -1,5 +1,3 @@
-resolvers += "memsql" at "http://maven.memsql.com"
-
 lazy val commonSettings = Seq(
   organization := "com.memsql",
   version := "0.0.1",
@@ -19,7 +17,7 @@ lazy val avro = (project in file("avro")).
         "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
         "org.apache.avro" % "avro" % "1.7.7",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-        "com.memsql" %% "memsqletl" % "1.0.0"
+        "com.memsql" %% "memsql-etl" % "1.1.0"
       )
     }
   )
@@ -37,7 +35,7 @@ lazy val thrift = (project in file("thrift")).
         "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
         "org.apache.thrift" % "libthrift" % "0.9.2",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-        "com.memsql" %% "memsqletl" % "1.0.0"
+        "com.memsql" %% "memsql-etl" % "1.1.0"
       )
     }
   )
@@ -53,6 +51,6 @@ lazy val root = (project in file(".")).
         "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
         "org.apache.spark" %% "spark-streaming" % "1.4.1" % "provided",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-        "com.memsql" %% "memsqletl" % "1.0.0"
+        "com.memsql" %% "memsql-etl" % "1.1.0"
     )
 )
