@@ -12,9 +12,9 @@ lazy val avro = (project in file("avro")).
     test in assembly := {},
     libraryDependencies ++= {
       Seq(
-        "org.apache.spark" %% "spark-core" % "1.4.1" % "provided",
-        "org.apache.spark" %% "spark-streaming" % "1.4.1" % "provided",
-        "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
+        "org.apache.spark" %% "spark-core" % "1.5.1" % "provided",
+        "org.apache.spark" %% "spark-streaming" % "1.5.1" % "provided",
+        "org.apache.spark" %% "spark-sql" % "1.5.1"  % "provided",
         "org.apache.avro" % "avro" % "1.7.7",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
         "com.memsql" %% "memsql-etl" % "1.1.0"
@@ -30,9 +30,9 @@ lazy val thrift = (project in file("thrift")).
     test in assembly := {},
     libraryDependencies ++= {
       Seq(
-        "org.apache.spark" %% "spark-core" % "1.4.1" % "provided",
-        "org.apache.spark" %% "spark-streaming" % "1.4.1" % "provided",
-        "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
+        "org.apache.spark" %% "spark-core" % "1.5.1" % "provided",
+        "org.apache.spark" %% "spark-streaming" % "1.5.1" % "provided",
+        "org.apache.spark" %% "spark-sql" % "1.5.1"  % "provided",
         "org.apache.thrift" % "libthrift" % "0.9.2",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
         "com.memsql" %% "memsql-etl" % "1.1.0"
@@ -47,9 +47,9 @@ lazy val root = (project in file(".")).
     parallelExecution in Test := false,
     test in assembly := {},
     libraryDependencies  ++= Seq(
-        "org.apache.spark" %% "spark-core" % "1.4.1" % "provided",
-        "org.apache.spark" %% "spark-sql" % "1.4.1"  % "provided",
-        "org.apache.spark" %% "spark-streaming" % "1.4.1" % "provided",
+        "org.apache.spark" %% "spark-core" % "1.5.1" % "provided",
+        "org.apache.spark" %% "spark-sql" % "1.5.1"  % "provided",
+        "org.apache.spark" %% "spark-streaming" % "1.5.1" % "provided",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
         "com.memsql" %% "memsql-etl" % "1.1.0"
     )
