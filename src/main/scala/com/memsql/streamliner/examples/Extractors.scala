@@ -11,63 +11,114 @@ import com.memsql.spark.connector._
 import com.memsql.spark.etl.api._
 import com.memsql.spark.etl.utils._
 import com.memsql.spark.etl.utils.PhaseLogger
+import org.apache.hadoop.io.{LongWritable, Text}
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat
 
-// The simplest implementation of an Extractor just provides a nextRDD method.
+// The simplest implementation of an Extractor just provides a next method.
 // This is useful for prototyping and debugging.
-class ConstantExtractor extends SimpleByteArrayExtractor {
-  override def nextRDD(sparkContext: SparkContext, config: UserExtractConfig, batchInterval: Long, logger: PhaseLogger): Option[RDD[Array[Byte]]] = {
-    logger.info("emitting a constant RDD")
+class ConstantExtractor extends Extractor {
+  override def next(ssc: StreamingContext, time: Long, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long,
+   logger: PhaseLogger): Option[DataFrame] = {
+    logger.info("extracting a constant sequence DataFrame")
 
-    Some(sparkContext.parallelize(List(1,2,3,4,5).map(byteUtils.intToBytes)))
+    val schema = StructType(StructField("number", IntegerType, false) :: Nil)
+
+    val sampleData = List(1,2,3,4,5)
+    val rowRDD = sqlContext.sparkContext.parallelize(sampleData).map(Row(_))
+
+    val df = sqlContext.createDataFrame(rowRDD, schema)
+    Some(df)
   }
 }
 
 // An Extractor can also be configured with the config blob that is provided in
 // MemSQL Ops.
-class ConfigurableConstantExtractor extends SimpleByteArrayExtractor {
-  override def nextRDD(sparkContext: SparkContext, config: UserExtractConfig, batchInterval: Long, logger: PhaseLogger): Option[RDD[Array[Byte]]] = {
-    logger.info("emitting a constant RDD")
+class ConfigurableConstantExtractor extends Extractor {
+  override def next(ssc: StreamingContext, time: Long, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long,
+   logger: PhaseLogger): Option[DataFrame] = {
+    val userConfig = config.asInstanceOf[UserExtractConfig]
+    val start = userConfig.getConfigInt("start").getOrElse(1)
+    val end = userConfig.getConfigInt("end").getOrElse(5)
+    val columnName = userConfig.getConfigString("column_name").getOrElse("number")
 
-    val start = config.getConfigInt("start").getOrElse(1)
-    val end = config.getConfigInt("end").getOrElse(5)
-    Some(sparkContext.parallelize(List.range(start, end + 1).map(byteUtils.intToBytes)))
+    logger.info("extracting a sequence DataFrame from $start to $end")
+
+    val schema = StructType(StructField(columnName, IntegerType, false) :: Nil)
+
+    val sampleData = List.range(start, end + 1)
+    val rowRDD = sqlContext.sparkContext.parallelize(sampleData).map(Row(_))
+
+    val df = sqlContext.createDataFrame(rowRDD, schema)
+    Some(df)
   }
+
 }
 
 // A more complex Extractor which maintains some state can be implemented using
 // the initialize and cleanup methods.
-class SequenceExtractor extends SimpleByteArrayExtractor {
+class SequenceExtractor extends Extractor {
   var i: Int = Int.MinValue
 
-  override def initialize(sparkContext: SparkContext, config: UserExtractConfig, batchInterval: Long, logger: PhaseLogger): Unit = {
-    i = config.getConfigInt("sequence", "initial_value").getOrElse(0)
+  override def initialize(ssc: StreamingContext, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long, logger: PhaseLogger): Unit = {
+    val userConfig = config.asInstanceOf[UserExtractConfig]
+    i = userConfig.getConfigInt("sequence", "initial_value").getOrElse(0)
 
     logger.info(s"initializing the sequence at $i")
   }
 
-  override def cleanup(sparkContext: SparkContext, config: UserExtractConfig, batchInterval: Long, logger: PhaseLogger): Unit = {
-    logger.info("cleaning up the sequence")
+  override def cleanup(ssc: StreamingContext, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long, logger: PhaseLogger): Unit = {
+    logger.info("cleaning up the sequence")    
   }
 
-  override def nextRDD(sparkContext: SparkContext, config: UserExtractConfig, batchInterval: Long, logger: PhaseLogger): Option[RDD[Array[Byte]]] = {
-    val sequenceSize = config.getConfigInt("sequence", "size").getOrElse(5)
+  override def next(ssc: StreamingContext, time: Long, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long, logger: PhaseLogger): Option[DataFrame] = {
+    val userConfig = config.asInstanceOf[UserExtractConfig]
+    val sequenceSize = userConfig.getConfigInt("sequence", "size").getOrElse(5)
+
     logger.info(s"emitting a sequence RDD from $i to ${i + sequenceSize}")
 
+    val schema = StructType(StructField("number", IntegerType, false) :: Nil)
+
     i += sequenceSize
-    Some(sparkContext.parallelize(List.range(i - sequenceSize, i).map(byteUtils.intToBytes)))
-  }
+    val sampleData = List.range(i - sequenceSize, i)
+    val rowRDD = sqlContext.sparkContext.parallelize(sampleData).map(Row(_))
+
+    val df = sqlContext.createDataFrame(rowRDD, schema)
+    Some(df)
+  }  
 }
 
-// Finally, an Extractor can be implemented using any existing InputDStream that
+// Finally, an Extractor can be implemented using any existing DStream that
 // works with Spark Streaming.
-class DStreamExtractor extends ByteArrayExtractor {
-  override def extract(ssc: StreamingContext, extractConfig: PhaseConfig, batchInterval: Long, logger: PhaseLogger): InputDStream[Array[Byte]] = {
-    logger.info("creating extractor from an InputDStream")
+class DStreamExtractor extends Extractor {
+  // InputDStream with type as per StreamingContext.fileStream
+  private var dStream: InputDStream[(LongWritable, Text)] = null
 
-    new InputDStream[Array[Byte]](ssc) {
-      override def start(): Unit = {}
-      override def stop(): Unit = {}
-      override def compute(validTime: Time): Option[RDD[Array[Byte]]] = Some(ssc.sparkContext.parallelize(List(0).map(byteUtils.intToBytes)))
-    }
+  def schema: StructType = StructType(StructField("word", StringType, false) :: Nil)
+
+  override def initialize(ssc: StreamingContext, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long,
+                          logger: PhaseLogger): Unit = {
+    val userConfig = config.asInstanceOf[UserExtractConfig]
+    val dataDir = userConfig.getConfigString("dataDir").getOrElse("/tmp")
+
+    // we need an InputDStream to be able to call start(), but textFileStream would return a DStream
+    // we then "re-implement" textFileStream by calling directly fileStream here
+    dStream = ssc.fileStream[LongWritable, Text, TextInputFormat](dataDir)
+    dStream.start()
+  }
+
+  override def cleanup(ssc: StreamingContext, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long,
+                       logger: PhaseLogger): Unit = {
+    dStream.stop()
+  }
+
+  override def next(ssc: StreamingContext, time: Long, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long,
+                    logger: PhaseLogger): Option[DataFrame] = {
+    dStream.compute(Time(time)).map(rdd => {
+      // InputDStream[(LongWritable, Text)] = (key, value), retrieve the value lines
+      val lines = rdd.map(_._2.toString)
+      val words = lines.flatMap(_.split(" "))
+      val rowRDD = words.map(Row(_))
+      sqlContext.createDataFrame(rowRDD, schema)
+    })
   }
 }

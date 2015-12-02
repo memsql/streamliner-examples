@@ -7,7 +7,7 @@ import org.apache.spark.rdd._
 import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 
-class S3AccessLogsTransformer extends SimpleByteArrayTransformer {
+class S3AccessLogsTransformer extends Transformer {
   val S3_LINE_LOGPATS = """(\S+) (\S+) \[(.*?)\] (\S+) (\S+) (\S+) (\S+) (\S+) (?:"([^"]+)"|-) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (?:"([^"]+)"|-) (?:"([^"]+)"|-) (\S+)\s*""".r
 
   val SCHEMA = StructType(Array(
@@ -37,9 +37,9 @@ class S3AccessLogsTransformer extends SimpleByteArrayTransformer {
     new java.sql.Timestamp(PARSER.parse(s).getTime())
   }
 
-  override def transform(sqlContext: SQLContext, rdd: RDD[Array[Byte]], config: UserTransformConfig, logger: PhaseLogger): DataFrame = {
-    val stringRDD = rdd.map(byteUtils.bytesToUTF8String)
-    val parsedRDD = stringRDD.flatMap(x => S3_LINE_LOGPATS.findAllMatchIn(x).map(y => y.subgroups))
+  override def transform(sqlContext: SQLContext, df: DataFrame, config: PhaseConfig, logger: PhaseLogger): DataFrame = {
+    val stringRDD = df.rdd
+    val parsedRDD = stringRDD.flatMap(x => S3_LINE_LOGPATS.findAllMatchIn(x(0).asInstanceOf[String]).map(y => y.subgroups))
     val timestampedRDD = parsedRDD.map(r => r.zipWithIndex.map({case (x, i) => if (i == 2) parseDateTime(x) else x}))
     val rowRDD = timestampedRDD.map(x => Row.fromSeq(x))
     sqlContext.createDataFrame(rowRDD, SCHEMA)

@@ -1,9 +1,10 @@
 package com.memsql.spark.examples.avro
 
-import com.memsql.spark.etl.api.{UserTransformConfig, SimpleByteArrayTransformer}
+import com.memsql.spark.etl.api.{UserTransformConfig, Transformer, PhaseConfig}
 import com.memsql.spark.etl.utils.PhaseLogger
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{SQLContext, DataFrame, Row}
+import org.apache.spark.sql.types.StructType
 
 import spray.json.JsValue
 import org.apache.avro.Schema
@@ -11,15 +12,16 @@ import org.apache.avro.generic.GenericData
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.specific.SpecificDatumReader
 
-class AvroTransformer extends SimpleByteArrayTransformer {
-  def AvroRDDToDataFrame(sqlContext: SQLContext, rdd: RDD[Array[Byte]], schemaJsonString: String): DataFrame = {
+class AvroTransformer extends Transformer {
+  val parser: Schema.Parser = new Schema.Parser()
+  var reader: SpecificDatumReader[GenericData.Record] = null
+  var avroSchema: Schema = null
+  var schema: StructType = null  
 
+  def AvroRDDToDataFrame(sqlContext: SQLContext, rdd: RDD[Row]): DataFrame = {
     val rowRDD: RDD[Row] = rdd.mapPartitions({ partition =>
-      val parser: Schema.Parser = new Schema.Parser()
-      val avroSchema = parser.parse(schemaJsonString)
-      val reader = new SpecificDatumReader[GenericData.Record](avroSchema)
-
-      partition.map({ bytes =>
+      partition.map({ rowOfBytes =>
+        val bytes = rowOfBytes(0).asInstanceOf[Array[Byte]]
         val decoder = DecoderFactory.get().binaryDecoder(bytes, null)
         val record = reader.read(null, decoder)
         val avroToRow = new AvroToRow()
@@ -27,18 +29,24 @@ class AvroTransformer extends SimpleByteArrayTransformer {
         avroToRow.getRow(record)
       })
     })
-
-    val topParser: Schema.Parser = new Schema.Parser()
-    var topAvroSchema: Schema = topParser.parse(schemaJsonString)
-    sqlContext.createDataFrame(rowRDD, AvroToSchema.getSchema(topAvroSchema))
+    sqlContext.createDataFrame(rowRDD, schema)
   }
 
-  override def transform(sqlContext: SQLContext, rdd: RDD[Array[Byte]], config: UserTransformConfig, logger: PhaseLogger): DataFrame = {
-    val avroSchemaJson = config.getConfigJsValue("avroSchema") match {
+  override def initialize(sqlContext: SQLContext, config: PhaseConfig, logger: PhaseLogger): Unit = {
+    val userConfig = config.asInstanceOf[UserTransformConfig]
+    val avroSchemaJson = userConfig.getConfigJsValue("avroSchema") match {
       case Some(s) => s
-      case None => throw new IllegalArgumentException("Avro schema must be set in the config")
+      case None => throw new IllegalArgumentException("avroSchema must be set in the config")
     }
-    AvroRDDToDataFrame(sqlContext, rdd, avroSchemaJson.toString)
+
+    avroSchema = parser.parse(avroSchemaJson.toString)
+    schema = AvroToSchema.getSchema(avroSchema)
+
+    reader = new SpecificDatumReader[GenericData.Record](avroSchema)
+  }
+
+  override def transform(sqlContext: SQLContext, df: DataFrame, config: PhaseConfig, logger: PhaseLogger): DataFrame = {
+    AvroRDDToDataFrame(sqlContext, df.rdd)
   }
 }
 
