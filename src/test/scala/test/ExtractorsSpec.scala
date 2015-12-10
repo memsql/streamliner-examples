@@ -80,7 +80,7 @@ class ExtractorsSpec extends UnitSpec with LocalSparkContext {
     extract.cleanup(ssc, sqlContext, config, 1, logger)    
   }
 
-  "DStreamExtractor" should "produce RDDs from the InputDStream" in {
+  "DStreamExtractor" should "produce DataFrames from the InputDStream" in {
     val extract = new DStreamExtractor
 
     // create tmp directory
@@ -124,5 +124,26 @@ class ExtractorsSpec extends UnitSpec with LocalSparkContext {
     val wordCountsDataFrame = sqlContext.sql("select word, count(*) as total from words group by word order by word")
     assert(wordCountsDataFrame.count == 4)
     assert(wordCountsDataFrame.head == Row("bar", 2))
+  }
+
+  "FileExtractor" should "produce DataFrame from files" in {
+    val extract = new FileExtractor
+
+    // initialize the extractor
+    val tweetsURI = getClass.getResource("/tweets").toURI
+    val config = UserExtractConfig(
+      class_name = "test",
+      value = JsObject(
+        "path" -> JsString(tweetsURI.toURL.toString)
+      )
+    )
+    extract.initialize(ssc, sqlContext, config, 1, logger)
+
+    // extract data
+    val maybeDf = extract.next(ssc, 1, sqlContext, config, 1, logger)
+    assert(maybeDf.isDefined)
+
+    val df = maybeDf.get
+    assert(df.count == 312)
   }
 }
