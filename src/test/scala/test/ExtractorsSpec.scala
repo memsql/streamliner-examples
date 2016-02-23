@@ -80,52 +80,6 @@ class ExtractorsSpec extends UnitSpec with LocalSparkContext {
     extract.cleanup(ssc, sqlContext, config, 1, logger)    
   }
 
-  "DStreamExtractor" should "produce DataFrames from the InputDStream" in {
-    val extract = new DStreamExtractor
-
-    // create tmp directory
-    val dataDir = System.getProperty("java.io.tmpdir") + "dstream/"
-    try {
-      val dir = new File(dataDir)
-      dir.mkdir()
-    }
-    finally {
-      System.setProperty("java.io.tmpdir", dataDir)
-    }
-
-    // initialize the extractor
-    val config = UserExtractConfig(
-      class_name = "test",
-      value = JsObject(
-        "dataDir" -> JsString(dataDir)
-      )
-    )
-    extract.initialize(ssc, sqlContext, config, 1, logger)
-
-    // wait some time, the check for new files is time sensitive
-    Thread sleep 1000
-
-    // create a new file, write data, rename the file to trigger the new file check
-    val file = File.createTempFile("tmp", ".txt")
-    val writer = new FileWriter(file)
-    try {
-      writer.write("hello world\nhello foo bar\nbar world")
-    }
-    finally writer.close()
-    file.renameTo(new File(dataDir, "testfile.txt"))
-
-    // extract data
-    val maybeDf = extract.next(ssc, System.currentTimeMillis(), sqlContext, config, 1, logger)
-    assert(maybeDf.isDefined)
-
-    // test that the dstream successfully created a dataframe
-    // http://spark.apache.org/docs/latest/streaming-programming-guide.html#dataframe-and-sql-operations
-    maybeDf.get.registerTempTable("words")
-    val wordCountsDataFrame = sqlContext.sql("select word, count(*) as total from words group by word order by word")
-    assert(wordCountsDataFrame.count == 4)
-    assert(wordCountsDataFrame.head == Row("bar", 2))
-  }
-
   "FileExtractor" should "produce DataFrame from files" in {
     val extract = new FileExtractor
 

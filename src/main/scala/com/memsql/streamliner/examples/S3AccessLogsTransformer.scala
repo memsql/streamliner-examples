@@ -37,11 +37,27 @@ class S3AccessLogsTransformer extends Transformer {
     new java.sql.Timestamp(PARSER.parse(s).getTime())
   }
 
+  def parseIntOrDash(s: String) = s match {
+    case "-" => null
+    case str => str.toInt
+  }
+
   override def transform(sqlContext: SQLContext, df: DataFrame, config: PhaseConfig, logger: PhaseLogger): DataFrame = {
     val stringRDD = df.rdd
     val parsedRDD = stringRDD.flatMap(x => S3_LINE_LOGPATS.findAllMatchIn(x(0).asInstanceOf[String]).map(y => y.subgroups))
-    val timestampedRDD = parsedRDD.map(r => r.zipWithIndex.map({case (x, i) => if (i == 2) parseDateTime(x) else x}))
-    val rowRDD = timestampedRDD.map(x => Row.fromSeq(x))
+
+    val typeConvertedRdd = parsedRDD.map(r =>
+      r.zipWithIndex.map({case (x, i) =>
+        if (i == 2) {
+          parseDateTime(x)
+        } else if (Set(9, 11, 12, 13, 14) contains i) {
+          parseIntOrDash(x)
+        } else {
+          x
+        }
+      }))
+
+    val rowRDD = typeConvertedRdd.map(x => Row.fromSeq(x))
     sqlContext.createDataFrame(rowRDD, SCHEMA)
   }
 }

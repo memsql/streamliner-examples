@@ -85,39 +85,3 @@ class SequenceExtractor extends Extractor {
     Some(df)
   }  
 }
-
-// Finally, an Extractor can be implemented using any existing DStream that
-// works with Spark Streaming.
-class DStreamExtractor extends Extractor {
-  // InputDStream with type as per StreamingContext.fileStream
-  private var dStream: InputDStream[(LongWritable, Text)] = null
-
-  def schema: StructType = StructType(StructField("word", StringType, false) :: Nil)
-
-  override def initialize(ssc: StreamingContext, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long,
-                          logger: PhaseLogger): Unit = {
-    val userConfig = config.asInstanceOf[UserExtractConfig]
-    val dataDir = userConfig.getConfigString("dataDir").getOrElse("/tmp")
-
-    // we need an InputDStream to be able to call start(), but textFileStream would return a DStream
-    // we then "re-implement" textFileStream by calling directly fileStream here
-    dStream = ssc.fileStream[LongWritable, Text, TextInputFormat](dataDir)
-    dStream.start()
-  }
-
-  override def cleanup(ssc: StreamingContext, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long,
-                       logger: PhaseLogger): Unit = {
-    dStream.stop()
-  }
-
-  override def next(ssc: StreamingContext, time: Long, sqlContext: SQLContext, config: PhaseConfig, batchInterval: Long,
-                    logger: PhaseLogger): Option[DataFrame] = {
-    dStream.compute(Time(time)).map(rdd => {
-      // InputDStream[(LongWritable, Text)] = (key, value), retrieve the value lines
-      val lines = rdd.map(_._2.toString)
-      val words = lines.flatMap(_.split(" "))
-      val rowRDD = words.map(Row(_))
-      sqlContext.createDataFrame(rowRDD, schema)
-    })
-  }
-}

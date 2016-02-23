@@ -229,5 +229,7 @@ class TransformersSpec extends UnitSpec with LocalSparkContext {
     assert(first.getAs[String]("ip") == "192.0.2.3")
     assert(first.getAs[String]("user_agent") == "S3Console/0.4")
     assert(first.getAs[String]("version_id") == "-")
+    assert(first.getAs[Int]("http_status") == 200)
+    assert(first.getAs[Int]("object_size") === null)
   }
 }
