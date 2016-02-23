@@ -4,49 +4,12 @@ import com.memsql.spark.connector.dataframe.JsonType
 import org.apache.spark.sql.types._
 import org.apache.avro.Schema
 import org.scalatest._
+import test.util.Fixtures
 
 class AvroToSchemaSpec extends FlatSpec {
   "AvroToSchema" should "create a Spark SQL schema from an Avro schema" in {
-    val avroJsonSchemaStringTest = s"""
-      {
-        "namespace": "com.memsql.spark.examples.avro",
-        "type": "record",
-        "name": "TestSchema",
-        "fields": [
-          {
-            "name": "testBool",
-            "type": "boolean"
-          },
-          {
-            "name": "testDouble",
-            "type": "double"
-          },
-          {
-            "name": "testFloat",
-            "type": "float"
-          },
-          {
-            "name": "testInt",
-            "type": "int"
-          },
-          {
-            "name": "testLong",
-            "type": "long"
-          },
-          {
-            "name": "testNull",
-            "type": "null"
-          },
-          {
-            "name": "testString",
-            "type": "string"
-          }
-        ]
-      }
-    """
-
     val parser = new Schema.Parser()
-    val avroSchema = parser.parse(avroJsonSchemaStringTest)
+    val avroSchema = parser.parse(Fixtures.avroSchema)
     val sparkSchema = AvroToSchema.getSchema(avroSchema)
     val fields = sparkSchema.fields
 
@@ -67,9 +30,12 @@ class AvroToSchemaSpec extends FlatSpec {
     assert(fields(4).dataType == LongType)
 
     assert(fields(5).name == "testNull")
-    assert(fields(5).dataType == StringType)
+    assert(fields(5).dataType == NullType)
 
     assert(fields(6).name == "testString")
     assert(fields(6).dataType == StringType)
+
+    assert(fields(7).name == "testUnion")
+    assert(fields(7).dataType == StringType)
   }
 }

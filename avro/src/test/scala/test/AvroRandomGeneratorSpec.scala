@@ -3,48 +3,11 @@ package com.memsql.spark.examples.avro
 import org.scalatest._
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
+import test.util.Fixtures
 
 class AvroRandomGeneratorSpec extends FlatSpec {
   "AvroRandomGenerator" should "create Avro objects with random values" in {
-    val avroJsonSchemaStringTest = s"""
-      {
-        "namespace": "com.memsql.spark.examples.avro",
-        "type": "record",
-        "name": "TestSchema",
-        "fields": [
-          {
-            "name": "testBool",
-            "type": "boolean"
-          },
-          {
-            "name": "testDouble",
-            "type": "double"
-          },
-          {
-            "name": "testFloat",
-            "type": "float"
-          },
-          {
-            "name": "testInt",
-            "type": "int"
-          },
-          {
-            "name": "testLong",
-            "type": "long"
-          },
-          {
-            "name": "testNull",
-            "type": "null"
-          },
-          {
-            "name": "testString",
-            "type": "string"
-          }
-        ]
-      }
-    """
-
-    val schema = new Schema.Parser().parse(avroJsonSchemaStringTest)
+    val schema = new Schema.Parser().parse(Fixtures.avroSchema)
     val avroRecord:GenericData.Record = new AvroRandomGenerator(schema).next().asInstanceOf[GenericData.Record]
 
     assert(avroRecord.get("testBool").isInstanceOf[Boolean])
@@ -54,5 +17,6 @@ class AvroRandomGeneratorSpec extends FlatSpec {
     assert(avroRecord.get("testLong").isInstanceOf[Long])
     assert(avroRecord.get("testNull") == null)
     assert(avroRecord.get("testString").isInstanceOf[String])
+    assert(avroRecord.get("testUnion").isInstanceOf[Int])
   }
 }

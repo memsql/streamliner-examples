@@ -1,10 +1,7 @@
 package com.memsql.spark.examples.avro
 
-import collection.JavaConversions._
 import com.memsql.spark.etl.api._
 import com.memsql.spark.etl.utils.PhaseLogger
-import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.sql.{SQLContext, DataFrame, Row}
 import org.apache.spark.sql.types._
@@ -15,6 +12,7 @@ import org.apache.avro.specific.SpecificDatumWriter
 
 import java.io.ByteArrayOutputStream
 
+// Generates an RDD of byte arrays, where each is a serialized Avro record.
 class AvroRandomExtractor extends Extractor {
   var count: Int = 1
   var generator: AvroRandomGenerator = null
