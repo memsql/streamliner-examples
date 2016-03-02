@@ -1,5 +1,6 @@
 MemSQL Spark Streamliner Examples
 =================================
+[![Build Status](https://travis-ci.org/memsql/streamliner-examples.svg?branch=master)](https://travis-ci.org/memsql/streamliner-examples)
 
 This is a repository featuring example code for the [MemSQL Spark Streamliner](http://docs.memsql.com/latest/spark/).
 

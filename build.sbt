@@ -9,7 +9,6 @@ lazy val avro = (project in file("avro")).
   settings(
     name := "memsql-spark-streamliner-avro-examples",
     parallelExecution in Test := false,
-    test in assembly := {},
     libraryDependencies ++= {
       Seq(
         "org.apache.spark" %% "spark-core" % "1.5.1" % "provided",
@@ -27,7 +26,6 @@ lazy val thrift = (project in file("thrift")).
   settings(
     name := "memsql-spark-streamliner-thrift-examples",
     parallelExecution in Test := false,
-    test in assembly := {},
     libraryDependencies ++= {
       Seq(
         "org.apache.spark" %% "spark-core" % "1.5.1" % "provided",
@@ -41,11 +39,12 @@ lazy val thrift = (project in file("thrift")).
   )
 
 lazy val root = (project in file(".")).
+  dependsOn(avro).
+  dependsOn(thrift).
   settings(commonSettings: _*).
   settings(
     name := "memsql-spark-streamliner-examples",
     parallelExecution in Test := false,
-    test in assembly := {},
     libraryDependencies  ++= Seq(
         "org.apache.spark" %% "spark-core" % "1.5.1" % "provided",
         "org.apache.spark" %% "spark-sql" % "1.5.1"  % "provided",
