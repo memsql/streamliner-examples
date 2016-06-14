@@ -56,6 +56,7 @@ lazy val kafka = (project in file("kafka")).
   )
 
 lazy val root = (project in file(".")).
+  dependsOn(kafka).
   dependsOn(avro).
   dependsOn(thrift).
   settings(commonSettings: _*).
