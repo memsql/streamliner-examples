@@ -16,7 +16,7 @@ lazy val avro = (project in file("avro")).
         "org.apache.spark" %% "spark-sql" % "1.5.2"  % "provided",
         "org.apache.avro" % "avro" % "1.7.7",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-        "com.memsql" %% "memsql-etl" % "1.3.2"
+        "com.memsql" %% "memsql-etl" % "1.3.3"
       )
     }
   )
@@ -33,7 +33,7 @@ lazy val thrift = (project in file("thrift")).
         "org.apache.spark" %% "spark-sql" % "1.5.2"  % "provided",
         "org.apache.thrift" % "libthrift" % "0.9.2",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-        "com.memsql" %% "memsql-etl" % "1.3.2"
+        "com.memsql" %% "memsql-etl" % "1.3.3"
       )
     }
   )
@@ -50,7 +50,7 @@ lazy val kafka = (project in file("kafka")).
         "org.apache.spark" %% "spark-sql" % "1.5.2"  % "provided",
         "org.apache.spark" %% "spark-streaming-kafka" % "1.5.2" exclude("org.spark-project.spark", "unused"),
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-        "com.memsql" %% "memsql-etl" % "1.3.2"
+        "com.memsql" %% "memsql-etl" % "1.3.3"
       )
     }
   )
@@ -68,6 +68,6 @@ lazy val root = (project in file(".")).
         "org.apache.spark" %% "spark-sql" % "1.5.2"  % "provided",
         "org.apache.spark" %% "spark-streaming" % "1.5.2" % "provided",
         "org.scalatest" %% "scalatest" % "2.2.5" % "test",
-        "com.memsql" %% "memsql-etl" % "1.3.2"
+        "com.memsql" %% "memsql-etl" % "1.3.3"
     )
 )
